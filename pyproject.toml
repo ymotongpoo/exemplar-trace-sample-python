@@ -1,8 +1,8 @@
 [tool.poetry]
-name = "exemplar-trace-sample"
+name = "opencensus_demo"
 version = "0.1.0"
 description = ""
-authors = ["Your Name <you@example.com>"]
+authors = ["Yoshi Yamaguchi"]
 
 [tool.poetry.dependencies]
 python = "^3.8"
@@ -18,7 +18,8 @@ isort = "^5.7.0"
 autopep8 = "^1.5.5"
 
 [tool.poetry.scripts]
-main = "exemplar_trace_sample.main:main"
+main = "opencensus_demo.main:main"
+raw = "raw.main:main"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]

@@ -24,7 +24,6 @@ from opencensus.ext.stackdriver import stats_exporter, trace_exporter
 from opencensus.stats import aggregation, measure
 from opencensus.stats import stats as stats_module
 from opencensus.stats import view
-from opencensus.tags import tag_map
 from opencensus.trace import tracer as tracer_module
 from opencensus.trace.propagation import google_cloud_format
 from opencensus.trace.samplers import AlwaysOnSampler
@@ -36,7 +35,7 @@ m_latency_ms = measure.MeasureFloat(
 )
 
 latency_view = view.View(
-    "task_latency_distribution",
+    "task_latency_distribution_exemplar",
     "The distribution of the task latencies",
     [],
     m_latency_ms,
@@ -44,8 +43,11 @@ latency_view = view.View(
         [100.0, 200.0, 400.0, 1000.0, 2000.0, 4000.0])
 )
 
+global project_id
+
 
 def init():
+    global project_id
     try:
         _, project_id = google.auth.default()
     except google.auth.exceptions.DefaultCredentialsError:
@@ -89,16 +91,27 @@ def main():
 
 def root(tracer):
     mmap = stats_module.stats.stats_recorder.new_measurement_map()
-    tmap = tag_map.TagMap()
+
     start = datetime.datetime.now()
     with tracer.span(name="root") as span:
+        global project_id
+        context = tracer.span_context
+        trace_id = context.trace_id
+        span_id = span.span_id
+        span_name = f"projects/{project_id}/traces/{trace_id}/spans/{span_id}"
         foo(span)
     end = datetime.datetime.now()
+    logging.info(f"span name: {span_name}")
 
     ms = (end - start).microseconds / 1000.0
     logging.info(f"task elapsed: {ms}ms")
     mmap.measure_float_put(m_latency_ms, ms)
-    mmap.record(tmap)
+    mmap.measure_put_attachment(
+        "@type", "type.googleapis.com/google.monitoring.v3.SpanContext")
+    mmap.measure_put_attachment(
+        "spanName", span_name
+    )
+    mmap.record()
 
 
 def foo(parent):

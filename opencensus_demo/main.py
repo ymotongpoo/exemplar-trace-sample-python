@@ -109,7 +109,7 @@ def root(tracer):
     mmap.measure_put_attachment(
         "@type", "type.googleapis.com/google.monitoring.v3.SpanContext")
     mmap.measure_put_attachment(
-        "spanName", span_name
+        "value", span_name
     )
     mmap.record()
 
